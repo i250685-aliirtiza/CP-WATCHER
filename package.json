@@ -1,2 +1,25 @@
 {
-  "name":"cp-watcher","version":"1.0.0","type":"module","engines":{"node":">=20"},"scripts":{"init":"node src/index.js init","scan":"node src/index.js scan","dry-run":"node src/index.js dry-run","test-email":"node src/index.js test-email","status":"node src/index.js status","upcoming":"node src/index.js upcoming","deadlines":"node src/index.js deadlines","test":"node --test"},"dependencies":{"cheerio":"^1.0.0","luxon":"^3.5.0","nodemailer":"^6.9.15","rss-parser":"^3.13.0","sql.js":"^1.11.0"}}
+  "name": "cp-watcher",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "init": "node src/index.js init",
+    "scan": "node src/index.js scan",
+    "dry-run": "node src/index.js dry-run",
+    "test-email": "node src/index.js test-email",
+    "status": "node src/index.js status",
+    "upcoming": "node src/index.js upcoming",
+    "deadlines": "node src/index.js deadlines",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "luxon": "^3.5.0",
+    "nodemailer": "10.1.7",
+    "rss-parser": "^3.13.0",
+    "sql.js": "^1.11.0"
+  }
+}
