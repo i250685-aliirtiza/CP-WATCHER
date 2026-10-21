@@ -51,3 +51,4 @@ Set `DATABASE_PATH=/var/lib/cp-watcher/cp-watcher.sqlite` in `/etc/cp-watcher.en
 Update safely: back up `/var/lib/cp-watcher/cp-watcher.sqlite`, stop/disable only `cp-watcher.timer`, run `git pull --ff-only && npm ci`, then re-enable the timer. Restore by stopping the timer and replacing the database with a verified backup. Disable with `sudo systemctl disable --now cp-watcher.timer`; FLEX-WATCHER remains untouched.
 
 Repository: https://github.com/i250685-aliirtiza/CP-WATCHER
+
