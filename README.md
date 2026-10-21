@@ -32,13 +32,15 @@ Discovery alerts are queued for major or high-priority events. Verified deadline
 sudo apt update && sudo apt install -y git
 sudo useradd --system --home /opt/cp-watcher --shell /usr/sbin/nologin cpwatcher
 sudo mkdir -p /opt/cp-watcher /var/lib/cp-watcher
-sudo chown -R cpwatcher:cpwatcher /opt/cp-watcher /var/lib/cp-watcher
 git clone https://github.com/i250685-aliirtiza/CP-WATCHER.git /opt/cp-watcher
 cd /opt/cp-watcher && npm ci
+sudo mkdir -p /var/lib/cp-watcher
+sudo chown -R cpwatcher:cpwatcher /opt/cp-watcher /var/lib/cp-watcher
 sudo install -o cpwatcher -g cpwatcher -m 600 /dev/null /etc/cp-watcher.env
 sudoedit /etc/cp-watcher.env
-sudo -u cpwatcher env $(sudo cat /etc/cp-watcher.env | tr '\n' ' ') /usr/bin/node src/index.js init
-sudo -u cpwatcher env $(sudo cat /etc/cp-watcher.env | tr '\n' ' ') /usr/bin/node src/index.js dry-run
+sudo -u cpwatcher bash -c 'set -a; . /etc/cp-watcher.env; set +a; exec /usr/bin/node src/index.js init'
+sudo -u cpwatcher bash -c 'set -a; . /etc/cp-watcher.env; set +a; exec /usr/bin/node src/index.js dry-run'
+sudo -u cpwatcher bash -c 'set -a; . /etc/cp-watcher.env; set +a; exec /usr/bin/node src/index.js test-email'
 sudo cp deploy/cp-watcher.service deploy/cp-watcher.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now cp-watcher.timer
@@ -46,7 +48,7 @@ systemctl status cp-watcher.timer
 journalctl -u cp-watcher.service -n 100 --no-pager
 ```
 
-Set `DATABASE_PATH=/var/lib/cp-watcher/cp-watcher.sqlite` in `/etc/cp-watcher.env`. The service uses `/opt/cp-watcher`, user `cpwatcher`, and a four-hour timer; it opens no port and does not affect FLEX-WATCHER. For an explicit SMTP diagnostic use `sudo -u cpwatcher systemctl start cp-watcher.service` only after configuration, or run `node src/index.js test-email` with the environment loaded.
+Set `DATABASE_PATH=/var/lib/cp-watcher/cp-watcher.sqlite` in `/etc/cp-watcher.env`. The service uses `/opt/cp-watcher`, user `cpwatcher`, and a four-hour timer; it opens no port and does not affect FLEX-WATCHER. The explicit SMTP diagnostic is the `test-email` command above; starting `cp-watcher.service` performs a scan, not an email test. The systemd unit loads `/etc/cp-watcher.env` directly.
 
 Update safely: back up `/var/lib/cp-watcher/cp-watcher.sqlite`, stop/disable only `cp-watcher.timer`, run `git pull --ff-only && npm ci`, then re-enable the timer. Restore by stopping the timer and replacing the database with a verified backup. Disable with `sudo systemctl disable --now cp-watcher.timer`; FLEX-WATCHER remains untouched.
 

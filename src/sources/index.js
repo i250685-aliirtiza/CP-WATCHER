@@ -1,6 +1,7 @@
 import Parser from 'rss-parser';
 import * as cheerio from 'cheerio';
 import { normalize } from '../filtering/events.js';
+import { parseDeadline } from '../parsing/deadlines.js';
 const parser = new Parser({ timeout: 10000 });
 const headers = { 'user-agent': 'CP-WATCHER/1.0 (+https://github.com/i250685-aliirtiza/CP-WATCHER)' };
 export async function response(url, options = {}) { const r=await fetch(url,{...options,headers:{...headers,...(options.headers||{})},signal:AbortSignal.timeout(options.timeout||15000)}); if(!r.ok) throw new Error(`HTTP ${r.status} from ${url}`); return r; }
@@ -16,8 +17,11 @@ export const icpc=()=>rss('icpc','https://icpc.global/regionals/feed','ICPC');
 export const calico=()=>rss('calico','https://calico.cs.berkeley.edu/feed.xml','CALICO');
 export const ieeextreme=()=>rss('ieeextreme','https://www.ieee.org/rss/ieeextreme.xml','IEEEXtreme');
 export const meta=()=>rss('meta-hacker-cup','https://engineering.fb.com/feed/','Meta Hacker Cup');
-export async function configuredPages(){const entries=(process.env.CP_WATCHER_EVENT_FEEDS||'').split(',').map(x=>x.trim()).filter(Boolean);const out=[];for(const entry of entries){const [url,format='rss',organizer='Configured official source',city='']=entry.split('|');if(format==='html'){const html=await text(url);const $=cheerio.load(html);$('a').each((_,a)=>{const name=$(a).text().replace(/\s+/g,' ').trim();const href=$(a).attr('href');if(href&&/(contest|programming|icpc|nascon|speed)/i.test(name))out.push(event({externalId:href,name,organizer,city:city||null,format:'in-person',official_url:new URL(href,url).href,announcement_url:url,verification_status:'lead'},'configured'));});}else out.push(...await rss('configured',url,organizer));}return out;}
+export async function configuredPages(){const entries=(process.env.CP_WATCHER_EVENT_FEEDS||'').split(',').map(x=>x.trim()).filter(Boolean);const out=[];for(const entry of entries){const [url,format='rss',organizer='Configured official source',city='']=entry.split('|');if(format==='html'){const html=await text(url);const $=cheerio.load(html);const links=[];$('a').each((_,a)=>{const name=$(a).text().replace(/\s+/g,' ').trim();const href=$(a).attr('href');if(href&&/(contest|programming|icpc|nascon|speed)/i.test(name))links.push({name,href:new URL(href,url).href});});for(const link of links.slice(0,20)){let detail='';try{detail=await text(link.href,{timeout:10000});}catch{}const evidence=detail?parseDeadline(cheerio.load(detail).text()):null;out.push(event({externalId:link.href,name:link.name,organizer,city:city||null,format:'in-person',official_url:link.href,announcement_url:url,registration_deadline:evidence?.iso||null,deadline_evidence:evidence?.evidence||null,deadline_timezone:evidence?.timezone||null,verification_status:evidence?.verification_status==='verified'?'verified':'candidate'},'configured'));}}else out.push(...await rss('configured',url,organizer));}return out;}
 export const adapters={codeforces,atcoder,codechef,leetcode,icpc,calico,ieeextreme,meta,configured:configuredPages};
+
+
+
 
 
 
