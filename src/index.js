@@ -21,3 +21,4 @@ else if(cmd==='upcoming'){console.table(all(db,"SELECT name,organizer,city,compe
 else if(cmd==='deadlines'){console.table(all(db,"SELECT name,registration_deadline,verification_status,registration_url,official_url FROM events WHERE registration_deadline IS NOT NULL AND registration_deadline >= datetime('now') ORDER BY registration_deadline"))}
 
 
+
