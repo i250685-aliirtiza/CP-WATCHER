@@ -11,7 +11,9 @@ export function queueNotifications(db, events, now = DateTime.utc().toISO()) {
     const priority = Number(event.priority); const isNew = event._isNew === true || event.isNew === true;
     if (isNew && (event.major || priority <= 2 || deadline)) db.run('INSERT OR IGNORE INTO notifications(event_id,type,deadline_version,status,created_at) VALUES(?,?,?,?,?)', [event.id, 'new', deadline || 'none', 'queued', now]);
     if (!deadline) continue;
-    const deadlineTime = DateTime.fromISO(deadline, { setZone: true }); const current = DateTime.fromISO(now, { setZone: true });
+    const hasZone = /(?:Z|[+-]\d\d:?\d\d)$/i.test(String(deadline));
+    const deadlineTime = DateTime.fromISO(deadline, hasZone ? { setZone: true } : { zone: event.deadline_timezone || 'UTC' });
+    const current = DateTime.fromISO(now, { setZone: true });
     if (!deadlineTime.isValid || !current.isValid) continue;
     const hours = deadlineTime.diff(current, 'hours').hours;
     if (hours > 24 && hours <= 120) db.run('INSERT OR IGNORE INTO notifications(event_id,type,deadline_version,status,created_at) VALUES(?,?,?,?,?)', [event.id, 'four-day', deadline, 'queued', now]);

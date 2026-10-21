@@ -1,14 +1,18 @@
 # CP-WATCHER
 
-One-shot Node.js watcher for competitive programming contests and registration deadlines. It uses Codeforces' documented contest API, SQLite via `sql.js`, conservative filtering, persistent notification deduplication, and Gmail SMTP.
+CP-WATCHER is a one-shot Node.js 20+ service that discovers competitive-programming contests, stores normalized event data in SQLite, and sends Gmail notifications for important new events and verified registration deadlines. It never registers anyone automatically.
 
-## Local use
+## Sources and limits
 
-Requires Node.js 20+.
+Live adapters include Codeforces, AtCoder, CodeChef, LeetCode, and best-effort public RSS adapters for ICPC, CALICO, IEEEXtreme, Meta Hacker Cup, plus `CP_WATCHER_EVENT_FEEDS` for trusted official RSS/Atom feeds. Source failures are isolated and recorded in `source_health`; feeds can change or block automation. Pakistani in-person events are supported through configured official feeds/pages when available. Unknown or ambiguous deadlines remain null.
+
+Events are filtered to algorithmic programming opportunities. Islamabad/Rawalpindi receive highest priority, followed by nearby Pakistan locations, other Pakistan locations, and online events. Repeated events are deduplicated by stable source IDs.
+
+## Local setup
 
 ```bash
 cp .env.example .env
-npm install
+npm ci
 npm run init
 npm run dry-run
 npm test
@@ -18,42 +22,32 @@ npm run upcoming
 npm run deadlines
 ```
 
-Set `EMAIL_ENABLED=true`, SMTP credentials, and `ALERT_EMAIL` only after deployment. Never commit `.env` or database files. `dry-run` performs HTTP discovery without writing events or notifications.
+`dry-run` performs live discovery without changing the database or notification state. Configure `EMAIL_ENABLED=true`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` (Gmail App Password), and `ALERT_EMAIL` before `npm run test-email`. Credentials are never logged or committed.
 
-The initial adapter is Codeforces and is verified against its public API. The adapter registry is intentionally small and failures are recorded in `source_health`; additional official feeds can be added without changing storage or notification code. Routine online contests are stored and only priority/major events queue immediate alerts; Pakistan locations receive higher priority. Unknown deadlines remain null and do not trigger reminders.
+Discovery alerts are queued for major or high-priority events. Verified deadlines queue a threshold-based reminder between 24 and 120 hours before closing; a final 24-hour reminder may also be queued. Each `(event,type,deadline)` is sent at most once normally, and failures remain retryable with bounded attempts.
 
-## Ubuntu manual deployment
-
-These commands are documentation for a later manual SSH session; CP-WATCHER does not connect to Oracle and does not install units automatically.
+## Ubuntu 24.04 deployment
 
 ```bash
-node --version
+sudo apt update && sudo apt install -y git
 sudo useradd --system --home /opt/cp-watcher --shell /usr/sbin/nologin cpwatcher
 sudo mkdir -p /opt/cp-watcher /var/lib/cp-watcher
 sudo chown -R cpwatcher:cpwatcher /opt/cp-watcher /var/lib/cp-watcher
-git clone https://github.com/OWNER/CP-WATCHER.git /opt/cp-watcher
-cd /opt/cp-watcher
-npm ci
+git clone https://github.com/i250685-aliirtiza/CP-WATCHER.git /opt/cp-watcher
+cd /opt/cp-watcher && npm ci
 sudo install -o cpwatcher -g cpwatcher -m 600 /dev/null /etc/cp-watcher.env
 sudoedit /etc/cp-watcher.env
-sudo -u cpwatcher env $(cat /etc/cp-watcher.env | xargs) node src/index.js init
-sudo -u cpwatcher env $(cat /etc/cp-watcher.env | xargs) node src/index.js dry-run
+sudo -u cpwatcher env $(sudo cat /etc/cp-watcher.env | tr '\n' ' ') /usr/bin/node src/index.js init
+sudo -u cpwatcher env $(sudo cat /etc/cp-watcher.env | tr '\n' ' ') /usr/bin/node src/index.js dry-run
 sudo cp deploy/cp-watcher.service deploy/cp-watcher.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now cp-watcher.timer
 systemctl status cp-watcher.timer
 journalctl -u cp-watcher.service -n 100 --no-pager
-sudo -u cpwatcher node src/index.js upcoming
-sudo -u cpwatcher node src/index.js deadlines
-sudo systemctl status flex-watcher
-sudo systemctl restart cp-watcher.timer
-sudo systemctl disable --now cp-watcher.timer
-cd /opt/cp-watcher && git pull --ff-only && npm ci
-sudo cp /var/lib/cp-watcher/cp-watcher.sqlite /var/backups/cp-watcher-$(date +%F).sqlite
 ```
 
-Use Gmail SMTP with an app password (`SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER`, `SMTP_PASSWORD`, `ALERT_EMAIL`). No public inbound port is needed. Keep FLEX-WATCHER in its existing directory and verify it after changes.
+Set `DATABASE_PATH=/var/lib/cp-watcher/cp-watcher.sqlite` in `/etc/cp-watcher.env`. The service uses `/opt/cp-watcher`, user `cpwatcher`, and a four-hour timer; it opens no port and does not affect FLEX-WATCHER. For an explicit SMTP diagnostic use `sudo -u cpwatcher systemctl start cp-watcher.service` only after configuration, or run `node src/index.js test-email` with the environment loaded.
 
-## Limitations
+Update safely: back up `/var/lib/cp-watcher/cp-watcher.sqlite`, stop/disable only `cp-watcher.timer`, run `git pull --ff-only && npm ci`, then re-enable the timer. Restore by stopping the timer and replacing the database with a verified backup. Disable with `sudo systemctl disable --now cp-watcher.timer`; FLEX-WATCHER remains untouched.
 
-Public pages may change or block automated requests; unsupported sources are reported rather than guessed. No registration is ever submitted. Live SMTP delivery requires credentials and was not exercised locally.
+Repository: https://github.com/i250685-aliirtiza/CP-WATCHER

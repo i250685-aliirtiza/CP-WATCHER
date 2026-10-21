@@ -25,7 +25,7 @@ export async function atcoder() {
 
 export async function codechef() {
   const data = await json('https://www.codechef.com/api/list/contests/all');
-  return (data.future_contests || []).map(x => event({ externalId: x.contest_code, name: x.contest_name, organizer: 'CodeChef', format: 'online', competition_start: x.start_date, competition_end: x.end_date, registration_deadline: x.end_date, official_url: `https://www.codechef.com/${x.contest_code}`, registration_url: `https://www.codechef.com/${x.contest_code}`, verification_status: 'verified' }, 'codechef'));
+  return (data.future_contests || []).map(x => event({ externalId: x.contest_code, name: x.contest_name, organizer: 'CodeChef', format: 'online', competition_start: x.start_date, competition_end: x.end_date, official_url: `https://www.codechef.com/${x.contest_code}`, registration_url: `https://www.codechef.com/${x.contest_code}`, verification_status: 'verified' }, 'codechef'));
 }
 
 // LeetCode exposes a public GraphQL endpoint; failures are isolated by the scanner.
@@ -52,3 +52,4 @@ export async function configuredPages() {
 }
 
 export const adapters = { codeforces, atcoder, codechef, leetcode, icpc, calico, ieeextreme, meta, configured: configuredPages };
+
