@@ -3,3 +3,12 @@ node_modules/
 *.sqlite
 *.db
 *.log
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.log
+.idea/
