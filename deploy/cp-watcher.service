@@ -1,0 +1,14 @@
+[Unit]
+Description=CP-WATCHER scheduled scan
+After=network-online.target
+[Service]
+Type=oneshot
+User=cpwatcher
+WorkingDirectory=/opt/cp-watcher
+ExecStart=/usr/bin/node /opt/cp-watcher/src/index.js scan
+EnvironmentFile=/etc/cp-watcher.env
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryMax=256M
+[Install]
+WantedBy=multi-user.target

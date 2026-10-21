@@ -1,0 +1,9 @@
+[Unit]
+Description=Run CP-WATCHER every four hours
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=4h
+Persistent=true
+Unit=cp-watcher.service
+[Install]
+WantedBy=timers.target

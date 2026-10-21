@@ -1,0 +1,5 @@
+import nodemailer from 'nodemailer'; import {DateTime} from 'luxon';
+export function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+export function transport(cfg){return nodemailer.createTransport({host:cfg.smtp.host,port:cfg.smtp.port,secure:cfg.smtp.secure,auth:{user:cfg.smtp.user,pass:cfg.smtp.password}})}
+export function queueNotifications(db,events,now){ for(const e of events){ const d=e.registration_deadline; if(e.major||e.priority<=2) db.run('INSERT OR IGNORE INTO notifications(event_id,type,deadline_version,status,created_at) VALUES(?,?,?,?,?)',[e.id,'new',d||'none','queued',now]); if(d){const days=Math.ceil(DateTime.fromISO(d).diff(DateTime.fromISO(now),'days').days); if(days===4) db.run('INSERT OR IGNORE INTO notifications(event_id,type,deadline_version,status,created_at) VALUES(?,?,?,?,?)',[e.id,'four-day',d,'queued',now]); if(days===1) db.run('INSERT OR IGNORE INTO notifications(event_id,type,deadline_version,status,created_at) VALUES(?,?,?,?,?)',[e.id,'final',d,'queued',now]); } } }
+export async function sendQueued(db,cfg){return 0}
